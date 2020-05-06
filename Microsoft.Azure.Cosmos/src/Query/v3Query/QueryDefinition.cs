@@ -6,6 +6,7 @@ namespace Microsoft.Azure.Cosmos
 {
     using System;
     using System.Collections.Generic;
+    using Microsoft.Azure.Cosmos.Linq;
     using Microsoft.Azure.Cosmos.Query.Core;
 
     /// <summary>
@@ -96,29 +97,27 @@ namespace Microsoft.Azure.Cosmos
         /// <returns>Boolean representing the equality</returns>
         public bool Equals(QueryDefinition other)
         {
+            if (this.QueryText != other.QueryText)
             {
-                if (this.QueryText != other.QueryText)
-                {
-                    return false;
-                }
-
-                if (this.SqlParameters.Count != other.SqlParameters.Count)
-                {
-                    return false;
-                }
-
-                foreach (KeyValuePair<string, SqlParameter> queryParameter in this.SqlParameters)
-                {
-                    if (!other.SqlParameters.TryGetValue(queryParameter.Key, out SqlParameter value) ||
-                        !value.Value.Equals(queryParameter.Value.Value) ||
-                        !value.Name.Equals(queryParameter.Value.Name))
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
+                return false;
             }
+
+            if (this.SqlParameters.Count != other.SqlParameters.Count)
+            {
+                return false;
+            }
+
+            foreach (KeyValuePair<string, SqlParameter> queryParameter in this.SqlParameters)
+            {
+                if (!other.SqlParameters.TryGetValue(queryParameter.Key, out SqlParameter value) ||
+                    !value.Name.Equals(queryParameter.Value.Name) ||
+                    (value.Value != null && !value.Value.Equals(queryParameter.Value.Value)))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -132,7 +131,9 @@ namespace Microsoft.Azure.Cosmos
                 int hashCode = 17;
                 foreach (KeyValuePair<string, SqlParameter> queryParameter in this.SqlParameters)
                 {
-                    int kvpHashCode = 17 + (queryParameter.Value.Name.GetHashCode() * 233) + queryParameter.Value.Value.GetHashCode();
+                    int kvpHashCode = 23 + (queryParameter.Value.Name.GetHashCode() * 233) + queryParameter.Value.Value.GetHashCode();
+
+                    // xor is associative so we generate the same hash code if order of parameters is different
                     hashCode ^= kvpHashCode;
                 }
 
