@@ -4,11 +4,13 @@
 
 namespace Microsoft.Azure.Cosmos
 {
-    using System;
     using System.Collections.Generic;
+    using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Cosmos.Resource.CosmosExceptions;
     using Microsoft.Azure.Cosmos.Routing;
+    using Microsoft.Azure.Documents;
 
     /// <summary>
     /// FeedRange that represents a Partition Key Range.
@@ -16,12 +18,12 @@ namespace Microsoft.Azure.Cosmos
     /// </summary>
     internal sealed class FeedRangePartitionKeyRange : FeedRangeInternal
     {
-        public string PartitionKeyRangeId { get; }
-
         public FeedRangePartitionKeyRange(string partitionKeyRangeId)
         {
             this.PartitionKeyRangeId = partitionKeyRangeId;
         }
+
+        public string PartitionKeyRangeId { get; }
 
         public override async Task<List<Documents.Routing.Range<string>>> GetEffectiveRangesAsync(
             IRoutingMapProvider routingMapProvider,
@@ -44,7 +46,18 @@ namespace Microsoft.Azure.Cosmos
 
             if (pkRange == null)
             {
-                throw new InvalidOperationException($"The PartitionKeyRangeId: \"{this.PartitionKeyRangeId}\" is not valid for the current container {containerRid} .");
+                throw CosmosExceptionFactory.Create(
+                    statusCode: HttpStatusCode.Gone,
+                    subStatusCode: (int)SubStatusCodes.PartitionKeyRangeGone,
+                    message: $"The PartitionKeyRangeId: \"{this.PartitionKeyRangeId}\" is not valid for the current container {containerRid} .",
+                    stackTrace: string.Empty,
+                    activityId: string.Empty,
+                    requestCharge: 0,
+                    retryAfter: null,
+                    headers: null,
+                    diagnosticsContext: null,
+                    error: null,
+                    innerException: null);
             }
 
             return new List<Documents.Routing.Range<string>> { pkRange.ToRange() };
@@ -60,10 +73,22 @@ namespace Microsoft.Azure.Cosmos
             return Task.FromResult(partitionKeyRanges);
         }
 
-        public override void Accept(FeedRangeVisitor visitor)
+        public override void Accept(IFeedRangeVisitor visitor)
         {
             visitor.Visit(this);
         }
+
+        public override Task<TResult> AcceptAsync<TResult>(
+            IFeedRangeAsyncVisitor<TResult> visitor,
+            CancellationToken cancellationToken = default)
+        {
+            return visitor.VisitAsync(this, cancellationToken);
+        }
+
+        public override Task<TResult> AcceptAsync<TResult, TArg>(
+           IFeedRangeAsyncVisitor<TResult, TArg> visitor,
+           TArg argument,
+           CancellationToken cancellationToken) => visitor.VisitAsync(this, argument, cancellationToken);
 
         public override string ToString() => this.PartitionKeyRangeId;
     }

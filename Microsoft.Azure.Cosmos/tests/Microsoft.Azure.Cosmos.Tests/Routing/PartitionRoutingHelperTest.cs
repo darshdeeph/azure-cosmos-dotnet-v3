@@ -2,23 +2,19 @@
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------
 
-namespace Microsoft.Azure.Cosmos.Routing
+namespace Microsoft.Azure.Cosmos.Tests.Routing
 {
     using System;
     using System.Collections.Generic;
-    using System.Collections.Specialized;
     using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.Azure.Cosmos.Collections;
-    using Microsoft.Azure.Cosmos.Query;
     using Newtonsoft.Json;
-    using Microsoft.Azure.Cosmos.Internal;
     using Microsoft.Azure.Documents.Routing;
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Collections;
-    using Microsoft.Azure.Cosmos.Query.Core.ContinuationTokens;
+    using Microsoft.Azure.Cosmos.Routing;
 
     /// <summary>
     /// Tests for <see cref="PartitionRoutingHelper"/> class.

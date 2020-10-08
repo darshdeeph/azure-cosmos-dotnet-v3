@@ -4,17 +4,12 @@
 
 namespace Microsoft.Azure.Cosmos
 {
-    using System.Threading.Tasks;
     using Microsoft.Azure.Cosmos.Scripts;
 
     internal abstract class CosmosResponseFactoryInternal : CosmosResponseFactory
     {
         public abstract FeedResponse<T> CreateChangeFeedUserTypeResponse<T>(
             ResponseMessage responseMessage);
-
-        public abstract FeedResponse<T> CreateChangeFeedUserTypeResponse<T>(
-            ResponseMessage responseMessage,
-            Documents.ResourceType resourceType);
 
         public abstract FeedResponse<T> CreateQueryFeedUserTypeResponse<T>(
             ResponseMessage responseMessage);

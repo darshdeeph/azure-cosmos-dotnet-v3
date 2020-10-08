@@ -23,19 +23,12 @@ namespace Microsoft.Azure.Cosmos.Json.Interop
         private NewtonsoftToCosmosDBWriter(
             Newtonsoft.Json.JsonWriter writer,
             Func<byte[]> getResultCallback)
-            : base(true)
         {
             this.writer = writer ?? throw new ArgumentNullException(nameof(writer));
             this.getResultCallback = getResultCallback ?? throw new ArgumentNullException(nameof(getResultCallback));
         }
 
-        public override long CurrentLength
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-        }
+        public override long CurrentLength => throw new NotImplementedException();
 
         public override JsonSerializationFormat SerializationFormat => JsonSerializationFormat.Text;
 
@@ -71,37 +64,37 @@ namespace Microsoft.Azure.Cosmos.Json.Interop
 
         public override void WriteFloat32Value(float value)
         {
-            throw new NotImplementedException();
+            this.writer.WriteValue(value);
         }
 
         public override void WriteFloat64Value(double value)
         {
-            throw new NotImplementedException();
+            this.writer.WriteValue(value);
         }
 
         public override void WriteGuidValue(Guid value)
         {
-            throw new NotImplementedException();
+            this.writer.WriteValue(value);
         }
 
         public override void WriteInt16Value(short value)
         {
-            throw new NotImplementedException();
+            this.writer.WriteValue(value);
         }
 
         public override void WriteInt32Value(int value)
         {
-            throw new NotImplementedException();
+            this.writer.WriteValue(value);
         }
 
         public override void WriteInt64Value(long value)
         {
-            throw new NotImplementedException();
+            this.writer.WriteValue(value);
         }
 
         public override void WriteInt8Value(sbyte value)
         {
-            throw new NotImplementedException();
+            this.writer.WriteValue(value);
         }
 
         public override void WriteNullValue()
@@ -138,26 +131,7 @@ namespace Microsoft.Azure.Cosmos.Json.Interop
 
         public override void WriteUInt32Value(uint value)
         {
-            throw new NotImplementedException();
-        }
-
-        protected override void WriteRawJsonToken(
-            JsonTokenType jsonTokenType,
-            ReadOnlySpan<byte> rawJsonToken)
-        {
-            string rawJson = Encoding.UTF8.GetString(rawJsonToken);
-            Newtonsoft.Json.JsonTextReader jsonTextReader = new Newtonsoft.Json.JsonTextReader(new StringReader(rawJson));
-            while (jsonTextReader.Read())
-            {
-                if (jsonTokenType == JsonTokenType.FieldName)
-                {
-                    this.writer.WritePropertyName(jsonTextReader.Value as string);
-                }
-                else
-                {
-                    this.writer.WriteValue(jsonTextReader.Value);
-                }
-            }
+            this.writer.WriteValue(value);
         }
 
         public static NewtonsoftToCosmosDBWriter CreateTextWriter()

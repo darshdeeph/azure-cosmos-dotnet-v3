@@ -5,6 +5,8 @@
 namespace Microsoft.Azure.Cosmos.Json
 {
     using System;
+    using System.Runtime.CompilerServices;
+    using System.Text;
     using Microsoft.Azure.Cosmos.Core.Utf8;
 
 #if INTERNAL
@@ -14,10 +16,11 @@ namespace Microsoft.Azure.Cosmos.Json
 #else
     internal
 #endif
-    readonly struct Utf8Memory
+    readonly struct Utf8Memory : IEquatable<Utf8Memory>
     {
         public static readonly Utf8Memory Empty = new Utf8Memory(ReadOnlyMemory<byte>.Empty);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Utf8Memory(ReadOnlyMemory<byte> utf8Bytes)
         {
             this.Memory = utf8Bytes;
@@ -27,8 +30,17 @@ namespace Microsoft.Azure.Cosmos.Json
 
         public Utf8Span Span => Utf8Span.UnsafeFromUtf8BytesNoValidation(this.Memory.Span);
 
-        public Utf8Memory Slice(int start) => new Utf8Memory(this.Memory.Slice(start));
-        public Utf8Memory Slice(int start, int length) => new Utf8Memory(this.Memory.Slice(start, length));
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Utf8Memory Slice(int start)
+        {
+            return new Utf8Memory(this.Memory.Slice(start));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Utf8Memory Slice(int start, int length)
+        {
+            return new Utf8Memory(this.Memory.Slice(start, length));
+        }
 
         public bool IsEmpty => this.Memory.IsEmpty;
         public int Length => this.Memory.Length;
@@ -61,6 +73,11 @@ namespace Microsoft.Azure.Cosmos.Json
             }
 
             return utf8Memory;
+        }
+
+        public static Utf8Memory Create(string value)
+        {
+            return Utf8Memory.UnsafeCreateNoValidation(Encoding.UTF8.GetBytes(value));
         }
 
         public static Utf8Memory UnsafeCreateNoValidation(ReadOnlyMemory<byte> utf8Bytes)

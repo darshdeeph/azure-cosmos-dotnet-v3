@@ -23,33 +23,21 @@ namespace Microsoft.Azure.Cosmos
         public override FeedResponse<T> CreateItemFeedResponse<T>(ResponseMessage responseMessage)
         {
             return this.CreateQueryFeedResponseHelper<T>(
-                responseMessage,
-                Documents.ResourceType.Document);
+                responseMessage);
         }
 
         public override FeedResponse<T> CreateChangeFeedUserTypeResponse<T>(
             ResponseMessage responseMessage)
         {
             return this.CreateChangeFeedResponseHelper<T>(
-                responseMessage,
-                Documents.ResourceType.Document);
-        }
-
-        public override FeedResponse<T> CreateChangeFeedUserTypeResponse<T>(
-            ResponseMessage responseMessage,
-            Documents.ResourceType resourceType)
-        {
-            return this.CreateChangeFeedResponseHelper<T>(
-                responseMessage,
-                resourceType);
+                responseMessage);
         }
 
         public override FeedResponse<T> CreateQueryFeedUserTypeResponse<T>(
             ResponseMessage responseMessage)
         {
             return this.CreateQueryFeedResponseHelper<T>(
-                responseMessage,
-                Documents.ResourceType.Document);
+                responseMessage);
         }
 
         public override FeedResponse<T> CreateQueryFeedResponse<T>(
@@ -57,16 +45,13 @@ namespace Microsoft.Azure.Cosmos
             Documents.ResourceType resourceType)
         {
             return this.CreateQueryFeedResponseHelper<T>(
-                responseMessage,
-                resourceType);
+                responseMessage);
         }
 
         private FeedResponse<T> CreateQueryFeedResponseHelper<T>(
-            ResponseMessage cosmosResponseMessage,
-            Documents.ResourceType resourceType)
+            ResponseMessage cosmosResponseMessage)
         {
-            QueryResponse queryResponse = cosmosResponseMessage as QueryResponse;
-            if (queryResponse != null)
+            if (cosmosResponseMessage is QueryResponse queryResponse)
             {
                 return QueryResponse<T>.CreateResponse<T>(
                     cosmosQueryResponse: queryResponse,
@@ -75,18 +60,15 @@ namespace Microsoft.Azure.Cosmos
 
             return ReadFeedResponse<T>.CreateResponse<T>(
                        cosmosResponseMessage,
-                       this.serializerCore,
-                       resourceType);
+                       this.serializerCore);
         }
 
         private FeedResponse<T> CreateChangeFeedResponseHelper<T>(
-            ResponseMessage cosmosResponseMessage,
-            Documents.ResourceType resourceType)
+            ResponseMessage cosmosResponseMessage)
         {
             return ReadFeedResponse<T>.CreateResponse<T>(
                        cosmosResponseMessage,
-                       this.serializerCore,
-                       resourceType);
+                       this.serializerCore);
         }
 
         public override ItemResponse<T> CreateItemResponse<T>(
@@ -250,7 +232,7 @@ namespace Microsoft.Azure.Cosmos
         {
             if (responseMessage.Content == null)
             {
-                return default(T);
+                return default;
             }
 
             return this.serializerCore.FromStream<T>(responseMessage.Content);

@@ -11,12 +11,7 @@ namespace Microsoft.Azure.Cosmos.Tests
     using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.Azure.Cosmos.Collections;
-    using Microsoft.Azure.Cosmos.Common;
     using Microsoft.Azure.Cosmos.Handlers;
-    using Microsoft.Azure.Cosmos.Internal;
-    using Microsoft.Azure.Cosmos.Query;
-    using Microsoft.Azure.Cosmos.Query.Core.ContinuationTokens;
     using Microsoft.Azure.Cosmos.Routing;
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Collections;
@@ -216,6 +211,52 @@ namespace Microsoft.Azure.Cosmos.Tests
             Assert.AreEqual(overlappingRanges.First().Id, resolvedRangeInfo.ResolvedRange.Id);
             CollectionAssert.AreEqual(suppliedTokens, resolvedRangeInfo.ContinuationTokens);
             routingMapProvider.Verify();
+        }
+
+        [TestMethod]
+        public async Task GetTargetRangeFromContinuationTokenNonExistentContainer()
+        {
+            List<Range<string>> providedRanges = new List<Range<string>> {
+                    new Range<string>(
+                        PartitionKeyInternal.MinimumInclusiveEffectivePartitionKey,
+                        PartitionKeyInternal.MaximumExclusiveEffectivePartitionKey,
+                        isMinInclusive: true,
+                        isMaxInclusive: false)
+                };
+
+            //Not empty
+            Range<string> range = new Range<string>("A", "B", true, false);
+            List<CompositeContinuationToken> suppliedTokens = new List<CompositeContinuationToken>
+                {
+                    new CompositeContinuationToken{ Range = range }
+                };
+
+            IReadOnlyList<PartitionKeyRange> overlappingRanges = new List<PartitionKeyRange> {
+                new PartitionKeyRange { Id = "0", MinInclusive = "A", MaxExclusive = "B" },
+                new PartitionKeyRange { Id = "1", MinInclusive = "B", MaxExclusive = "C" }
+            }.AsReadOnly();
+
+            Mock<IRoutingMapProvider> routingMapProvider = new Mock<IRoutingMapProvider>();
+            routingMapProvider
+                .SetupSequence(m => m.TryGetOverlappingRangesAsync(
+                    It.IsAny<string>(),
+                    It.Is<Range<string>>(x => x.Min == range.Min),
+                    It.IsAny<bool>()))
+                .Returns(Task.FromResult((IReadOnlyList<PartitionKeyRange>)overlappingRanges.Skip(1).ToList()))
+                .Returns(Task.FromResult((IReadOnlyList<PartitionKeyRange>)null));
+
+            PartitionRoutingHelper partitionRoutingHelper = new PartitionRoutingHelper();
+            ResolvedRangeInfo resolvedRangeInfo = await partitionRoutingHelper.TryGetTargetRangeFromContinuationTokenRangeAsync(
+                providedRanges,
+                routingMapProvider.Object,
+                CollectionId,
+                range,
+                suppliedTokens,
+                RntdbEnumerationDirection.Reverse);
+
+            Assert.IsNotNull(resolvedRangeInfo);
+            Assert.IsNull(resolvedRangeInfo.ResolvedRange);
+            Assert.IsNull(resolvedRangeInfo.ContinuationTokens);
         }
 
         [TestMethod]
@@ -564,7 +605,7 @@ namespace Microsoft.Azure.Cosmos.Tests
         [TestMethod]
         public async Task InvalidPartitionRetryPolicyWithNextRetryPolicy()
         {
-            CosmosClient client = MockCosmosUtil.CreateMockCosmosClient();
+            using CosmosClient client = MockCosmosUtil.CreateMockCosmosClient();
             Mock<IDocumentClientRetryPolicy> nextRetryPolicyMock = new Mock<IDocumentClientRetryPolicy>();
 
             nextRetryPolicyMock
@@ -593,7 +634,7 @@ namespace Microsoft.Azure.Cosmos.Tests
         [TestMethod]
         public async Task InvalidPartitionRetryPolicyWithoutNextRetryPolicy()
         {
-            CosmosClient client = MockCosmosUtil.CreateMockCosmosClient();
+            using CosmosClient client = MockCosmosUtil.CreateMockCosmosClient();
 
             InvalidPartitionExceptionRetryPolicy retryPolicyMock = new InvalidPartitionExceptionRetryPolicy( null);
 
